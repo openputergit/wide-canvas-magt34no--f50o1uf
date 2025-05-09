@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truck Driver Attendance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div id="loginPage" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-md w-96">
+            <h2 class="text-2xl font-bold mb-6 text-center">Admin Login</h2>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Username</label>
+                    <input type="text" id="username" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="driverPage" class="min-h-screen p-4 hidden">
+        <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold mb-6">Driver Attendance Form</h2>
+            <form id="attendanceForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Driver Name</label>
+                    <input type="text" id="driverName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Truck Number</label>
+                    <input type="text" id="truckNumber" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Starting Mileage (km)</label>
+                    <input type="number" id="startMileage" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Ending Mileage (km)</label>
+                    <input type="number" id="endMileage" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-green-500 text-white p-2 rounded-md hover:bg-green-600">Submit Attendance</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="adminDashboard" class="min-h-screen p-4 hidden">
+        <nav class="bg-white shadow-lg mb-6">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-bold">Admin Dashboard</h1>
+                    </div>
+                    <div class="flex items-center">
+                        <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold mb-4">Fuel Consumption Chart</h3>
+                <canvas id="fuelChart"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-semibold mb-4">Driver Attendance Chart</h3>
+                <canvas id="attendanceChart"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md md:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Driver Records</h3>
+                    <div class="flex gap-2">
+                        <input type="date" id="dateFilter" class="border rounded-md p-2">
+                        <select id="driverFilter" class="border rounded-md p-2">
+                            <option value="">All Drivers</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Mileage</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Mileage</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fuel Used</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsTable" class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // MongoDB collection name
+        const COLLECTION_NAME = 'driver-attendance-123456';
+        const APP_SLUG = 'driver-attendance-app-123456';
+
+        // Initialize charts
+        let fuelChart, attendanceChart;
+
+        // Login handling
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (username === 'nandha' && password === '123456789') {
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                initializeCharts();
+                loadRecords();
+            } else {
+                alert('Invalid credentials');
+            }
+        });
+
+        // Driver attendance form handling
+        document.getElementById('attendanceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = {
+                driverName: document.getElementById('driverName').value,
+                truckNumber: document.getElementById('truckNumber').value,
+                startMileage: parseFloat(document.getElementById('startMileage').value),
+                endMileage: document.getElementById('endMileage').value ? parseFloat(document.getElementById('endMileage').value) : null,
+                date: new Date().toISOString(),
+                fuelUsed: calculateFuelUsage(
+                    parseFloat(document.getElementById('startMileage').value),
+                    document.getElementById('endMileage').value ? parseFloat(document.getElementById('endMileage').value) : null
+                )
+            };
+
+            try {
+                const response = await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/mongodb', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer AKlXqLHAgeNYKULTsXNPrhMyubV2',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appSlug: APP_SLUG,
+                        action: 'create',
+                        collection: COLLECTION_NAME,
+                        data: formData
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Attendance recorded successfully!');
+                    document.getElementById('attendanceForm').reset();
+                } else {
+                    throw new Error('Failed to save attendance');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to save attendance');
+            }
+        });
+
+        // Calculate fuel usage (approximate calculation)
+        function calculateFuelUsage(startMileage, endMileage) {
+            if (!endMileage) return null;
+            const distance = endMileage - startMileage;
+            // Assuming average fuel consumption of 10 km/L
+            return (distance / 10).toFixed(2);
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            const fuelCtx = document.getElementById('fuelChart').getContext('2d');
+            const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+
+            fuelChart = new Chart(fuelCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Fuel Consumption (L)',
+                        data: [],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                }
+            });
+
+            attendanceChart = new Chart(attendanceCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Present', 'Absent'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(255, 99, 132, 0.2)'],
+                        borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+                        borderWidth: 1
+                    }]
+                }
+            });
+        }
+
+        // Load records
+        async function loadRecords() {
+            try {
+                const response = await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/mongodb', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer AKlXqLHAgeNYKULTsXNPrhMyubV2',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appSlug: APP_SLUG,
+                        action: 'read',
+                        collection: COLLECTION_NAME
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateTable(data.result);
+                    updateCharts(data.result);
+                    updateFilters(data.result);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Update table
+        function updateTable(records) {
+            const tbody = document.getElementById('recordsTable');
+            tbody.innerHTML = '';
+
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">${new Date(record.date).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${record.driverName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${record.truckNumber}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${record.startMileage}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${record.endMileage || '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${record.fuelUsed || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update charts
+        function updateCharts(records) {
+            // Update fuel chart
+            const fuelData = records.filter(r => r.fuelUsed).map(r => ({
+                date: new Date(r.date).toLocaleDateString(),
+                fuelUsed: parseFloat(r.fuelUsed)
+            }));
+
+            fuelChart.data.labels = fuelData.map(d => d.date);
+            fuelChart.data.datasets[0].data = fuelData.map(d => d.fuelUsed);
+            fuelChart.update();
+
+            // Update attendance chart
+            const present = records.filter(r => r.endMileage).length;
+            const absent = records.filter(r => !r.endMileage).length;
+
+            attendanceChart.data.datasets[0].data = [present, absent];
+            attendanceChart.update();
+        }
+
+        // Update filters
+        function updateFilters(records) {
+            const driverFilter = document.getElementById('driverFilter');
+            const drivers = [...new Set(records.map(r => r.driverName))];
+
+            driverFilter.innerHTML = '<option value="">All Drivers</option>';
+            drivers.forEach(driver => {
+                const option = document.createElement('option');
+                option.value = driver;
+                option.textContent = driver;
+                driverFilter.appendChild(option);
+            });
+        }
+
+        // Logout function
+        function logout() {
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('loginForm').reset();
+        }
+
+        // Show driver page by default
+        document.getElementById('driverPage').classList.remove('hidden');
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
